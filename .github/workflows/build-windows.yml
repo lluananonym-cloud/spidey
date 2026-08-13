@@ -17,17 +17,24 @@ jobs:
         with:
           version: 4.7.0
           use-dotnet: false
-          include-mono: false
-          download-templates: true
+          include-templates: true
 
-      - name: Export Windows build
+      - name: Verify Godot and export Windows build
         shell: pwsh
         run: |
+          godot --version
           New-Item -ItemType Directory -Force -Path build | Out-Null
-          godot --headless --path . --export-release "Windows Desktop" "build/SpiderVerseMidtown.exe"
+          godot --headless --verbose --path . --export-release "Windows Desktop" "build/SpiderVerseMidtown.exe"
+          if (!(Test-Path "build/SpiderVerseMidtown.exe")) {
+            Write-Error "Godot did not create build/SpiderVerseMidtown.exe"
+            Get-ChildItem -Recurse -Force | Select-Object FullName, Length
+            exit 1
+          }
+          Get-Item "build/SpiderVerseMidtown.exe" | Select-Object FullName, Length
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: SpiderVerse-Midtown-Windows
           path: build/
+          if-no-files-found: error
